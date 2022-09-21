@@ -18,10 +18,12 @@ function main() {
     attribute vec2 aPosition;
     attribute vec3 aColor;
     uniform float uTheta;
-    varying vec3 vColor;
+    varying vec3 vColor;;
     void main() {
-        float x = -sin(uTheta) * aPosition.x + cos(uTheta) * aPosition.y;
-        float y = cos(uTheta) * aPosition.x + sin(uTheta) * aPosition.y;
+        float x = -sin(uTheta) * aPosition.x + cos(uTheta) * aPosition.y + uTranslation;
+        float y = cos(uTheta) * aPosition.x + sin(uTheta) * aPosition.y + uTranslation;
+        // y += MoveY;
+        // x +- MoveX;
         gl_Position = vec4(x, y, 0.0, 1.0);
         vColor = aColor;
     }
@@ -76,16 +78,51 @@ function main() {
     }
     document.addEventListener("click", onMouseClick);
     // Papan ketuk
-    function onKeydown(event) {
-        if (event.keyCode == 32) freeze = !freeze;
+    // function onKeydown(event) {
+    //     if (event.keyCode == 32) freeze = !freeze;
+    // }
+    // function onKeyup(event) {
+    //     if (event.keyCode == 32) freeze = !freeze;
+    // }
+    // document.addEventListener("keydown", onKeydown);
+    // document.addEventListener("keyup", onKeyup);
+    
+    // wasd
+    var up = false;
+        down = false;
+        left = false;
+        right = false;
+    
+    document.addEventListener("keydown", pressed);
+    function pressed(event) {
+        if (event.keyCode == 87){
+            up = true;
+        }
+        if (event.keyCode === 83){
+            down = true;
+        }
+        if (event.keyCode === 68){
+            right = true;
+        }
+        if (event.keyCode === 63){
+            left = true;
+        }
     }
-    function onKeyup(event) {
-        if (event.keyCode == 32) freeze = !freeze;
+    document.addEventListener("keyup", released);
+    function released(event){
+        if (event.keyCode === 87){
+            up = false;
+        }
+        if (event.keyCode === 83){
+            down = false;
+        }
+        if (event.keyCode === 68){
+            right = false;
+        }
+        if (event.keyCode === 63){
+            left = false;
+        }
     }
-    document.addEventListener("keydown", onKeydown);
-    document.addEventListener("keyup", onKeyup);
-
-
 
     // function render() {
     //     gl.clearColor(1.0,      0.65,    0.0,    1.0);  // Oranye
@@ -133,4 +170,20 @@ function main() {
         requestAnimationFrame(render);
     }
     requestAnimationFrame(render);
+
+    // function wasd(){
+    //     if (up){
+    //         MoveY -= 0.1;
+    //     }
+    //     if (down){
+    //         MoveY += 0.1;
+    //     }
+    //     if (left){
+    //         MoveX -= 0.1;
+    //     }
+    //     if (right){
+    //         MoveX += 0.1;
+    //     }
+    // }
+    // requestAnimationFrame(wasd);
 }
