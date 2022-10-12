@@ -3,10 +3,10 @@ function main() {
     var gl = canvasdhil.getContext("webgl");
 
     var vertices = [
-        0.5, 0.5, 0.0, 1.0, 1.0,   // A: kanan atas    (BIRU LANGIT)
-        0.5, -0.5, 1.0, 0.0, 1.0,   // B: bawah tengah  (MAGENTA)
-        -0.5, -0.5, 1.0, 1.0, 0.0,  // C: kiri atas     (KUNING)
-        -0.5, 0.5, 1.0, 1.0, 1.0    // D: atas tengah   (PUTIH)
+        0.5, 0.0, 0.0, 1.0, 1.0,   // A: kanan atas    (BIRU LANGIT)
+        0.0, -0.5, 1.0, 0.0, 1.0,  // B: bawah tengah  (MAGENTA)
+        -0.5, 0.0, 1.0, 1.0, 0.0,  // C: kiri atas     (KUNING)
+        0.0, 0.5, 1.0, 1.0, 1.0    // D: atas tengah   (PUTIH)
     ];
 
     var buffer = gl.createBuffer();
@@ -18,13 +18,23 @@ function main() {
     attribute vec2 aPosition;
     attribute vec3 aColor;
     uniform float uTheta;
-    varying vec3 vColor;;
+    uniform vec2 uDelta;
+    varying vec3 vColor;
     void main() {
-        float x = -sin(uTheta) * aPosition.x + cos(uTheta) * aPosition.y + uTranslation;
-        float y = cos(uTheta) * aPosition.x + sin(uTheta) * aPosition.y + uTranslation;
-        // y += MoveY;
-        // x +- MoveX;
-        gl_Position = vec4(x, y, 0.0, 1.0);
+        vec2 position = aPosition;
+        mat4 rotation = mat4(
+            cos(uTheta), sin(uTheta), 0.0, 0.0,
+            -sin(uTheta), cos(uTheta), 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0
+        );
+        mat4 translation = mat4(
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            uDelta.x, uDelta.y, 0.0, 1.0
+        );
+        gl_Position = translation * rotation * vec4(position, 0.0, 1.0);
         vColor = aColor;
     }
     `;
@@ -53,9 +63,14 @@ function main() {
     // Variabel lokal
     var theta = 0.0;
     var freeze = false;
+    var horizontalSpeed = 0.0;
+    var verticalSpeed = 0.0;
+    var horizontalDelta = 0.0;
+    var verticalDelta = 0.0;
 
     // Variabel pointer ke GLSL
     var uTheta = gl.getUniformLocation(shaderProgram, "uTheta");
+    var uDelta = gl.getUniformLocation(shaderProgram, "uDelta");
 
     // Kita mengajari GPU bagaimana caranya mengoleksi
     //  nilai posisi dari ARRAY_BUFFER
@@ -78,85 +93,28 @@ function main() {
     }
     document.addEventListener("click", onMouseClick);
     // Papan ketuk
-    // function onKeydown(event) {
-    //     if (event.keyCode == 32) freeze = !freeze;
-    // }
-    // function onKeyup(event) {
-    //     if (event.keyCode == 32) freeze = !freeze;
-    // }
-    // document.addEventListener("keydown", onKeydown);
-    // document.addEventListener("keyup", onKeyup);
-    
-    // wasd
-    var up = false;
-        down = false;
-        left = false;
-        right = false;
-    
-    document.addEventListener("keydown", pressed);
-    function pressed(event) {
-        if (event.keyCode == 87){
-            up = true;
+    function onKeydown(event) {
+        if (event.keyCode == 32) freeze = !freeze;  // spasi
+        // Gerakan horizontal: a ke kiri, d ke kanan
+        if (event.keyCode == 65) {  // a
+            horizontalSpeed = -0.01;
+        } else if (event.keyCode == 68) {   // d
+            horizontalSpeed = 0.01;
         }
-        if (event.keyCode === 83){
-            down = true;
-        }
-        if (event.keyCode === 68){
-            right = true;
-        }
-        if (event.keyCode === 63){
-            left = true;
+        // Gerakan vertikal: w ke atas, s ke bawah
+        if (event.keyCode == 87) {  // w
+            verticalSpeed = -0.01;
+        } else if (event.keyCode == 83) {   // s
+            verticalSpeed = 0.01;
         }
     }
-    document.addEventListener("keyup", released);
-    function released(event){
-        if (event.keyCode === 87){
-            up = false;
-        }
-        if (event.keyCode === 83){
-            down = false;
-        }
-        if (event.keyCode === 68){
-            right = false;
-        }
-        if (event.keyCode === 63){
-            left = false;
-        }
+    function onKeyup(event) {
+        if (event.keyCode == 32) freeze = !freeze;
+        if (event.keyCode == 65 || event.keyCode == 68) horizontalSpeed = 0.0;
+        if (event.keyCode == 87 || event.keyCode == 83) verticalSpeed = 0.0;
     }
-
-    // function render() {
-    //     gl.clearColor(1.0,      0.65,    0.0,    1.0);  // Oranye
-    //     //            Merah     Hijau   Biru    Transparansi
-    //     gl.clear(gl.COLOR_BUFFER_BIT);
-    //     theta += 1;
-    //     gl.uniform1f(uTheta, theta);
-    //     gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
-    // }
-    // setInterval(render, 1000/60); // manggil fungsi (render) jalanin tiap kali 1000/60 frames
-
-    // function render() {
-    //     setTimeout(function(){
-    //         gl.clearColor(1.0,      0.65,    0.0,    1.0);  // Oranye
-    //         //            Merah     Hijau   Biru    Transparansi
-    //         gl.clear(gl.COLOR_BUFFER_BIT);
-    //         theta += 0.1;
-    //         gl.uniform1f(uTheta, theta);
-    //         gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
-    //         render();
-    //     }, 1000/30); // we set the animation timeout by ourselves
-    // }
-    // render();
-
-    // function render() {
-    //     gl.clearColor(1.0,      0.65,    0.0,    1.0);  // Oranye
-    //     //            Merah     Hijau   Biru    Transparansi
-    //     gl.clear(gl.COLOR_BUFFER_BIT);
-    //     theta += 0.1;
-    //     gl.uniform1f(uTheta, theta);
-    //     gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
-    //     requestAnimationFrame(render); // automatically set by the browser depending on the state of the computer 
-    // }
-    // requestAnimationFrame(render);
+    document.addEventListener("keydown", onKeydown);
+    document.addEventListener("keyup", onKeyup);
 
     function render() {
         gl.clearColor(1.0,      0.65,    0.0,    1.0);  // Oranye
@@ -166,24 +124,11 @@ function main() {
             theta += 0.1;
             gl.uniform1f(uTheta, theta);
         }
+        horizontalDelta += horizontalSpeed;
+        verticalDelta -= verticalSpeed;
+        gl.uniform2f(uDelta, horizontalDelta, verticalDelta);
         gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
         requestAnimationFrame(render);
     }
     requestAnimationFrame(render);
-
-    // function wasd(){
-    //     if (up){
-    //         MoveY -= 0.1;
-    //     }
-    //     if (down){
-    //         MoveY += 0.1;
-    //     }
-    //     if (left){
-    //         MoveX -= 0.1;
-    //     }
-    //     if (right){
-    //         MoveX += 0.1;
-    //     }
-    // }
-    // requestAnimationFrame(wasd);
 }
